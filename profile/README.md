@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-MVP%20in%20progress-orange" alt="Status">
+  <img src="https://img.shields.io/badge/status-MVP%20released-brightgreen" alt="Status">
   <img src="https://img.shields.io/badge/Java-21-red" alt="Java 21">
   <img src="https://img.shields.io/badge/Spring%20Boot-4-brightgreen" alt="Spring Boot 4">
   <img src="https://img.shields.io/badge/Flutter-Dart%203-02569B" alt="Flutter">
@@ -31,8 +31,13 @@ A consumer opens the map and sees offers from businesses **a few meters away**: 
 
 | Repo | Description | Stack |
 |---|---|---|
-| [**geops-api**](https://github.com/geops-app/geops-api) | REST API: auth, offers by radius, coupons, payments | Java 21 · Spring Boot 4 · PostgreSQL + PostGIS · Redis · Flyway |
+| [**geops-api**](https://github.com/geops-app/geops-api) | REST API: auth, offers by radius, coupons, redemption, stats | Java 21 · Spring Boot 4 · PostgreSQL + PostGIS · Redis · Flyway |
 | [**geops-mobile**](https://github.com/geops-app/geops-mobile) | App for consumers and businesses | Flutter · Riverpod · go_router · Dio · Clean Architecture |
+
+## Features (MVP)
+
+- **Consumers**: offers within a chosen radius on a map or a list, filtered by category; claim a coupon and show it as a QR code.
+- **Businesses**: profile and location, publish and pause offers, issue coupons with stock, redeem codes at the counter and see 7-day stats.
 
 ## Architecture
 
@@ -46,13 +51,12 @@ flowchart LR
     end
 
     subgraph Api["☕ geops-api (Spring Boot)"]
-        Sec[Spring Security + JWT] --> Ctx[Bounded contexts<br/>identity · offers · coupons<br/>reviews · subscriptions · payments]
+        Sec[Spring Security + JWT] --> Ctx[Bounded contexts<br/>identity · offers · coupons]
     end
 
     Http -- "HTTPS /api/v1" --> Sec
     Ctx --> PG[(PostgreSQL + PostGIS)]
     Ctx --> RD[(Redis<br/>cache · rate limit)]
-    Ctx -. test mode .-> Stripe[Stripe]
 ```
 
 ## Roadmap
@@ -60,14 +64,15 @@ flowchart LR
 | Version | Scope | Status |
 |---|---|---|
 | **v0.1.0** | Foundation, CI, authentication with roles | ✅ Released |
-| **v0.2.0** | Businesses, offers, map and geolocation | 🚧 Next |
-| **v0.3.0** | Coupons, redemption, stats, deployment (**MVP**) | ⏳ Planned |
-| Later | Favorites, reviews, cart, subscriptions, payments, notifications | ⏳ Planned |
+| **v0.2.0** | Businesses, offers, map and geolocation | ✅ Released |
+| **v0.3.0** | Coupons, redemption, stats, deployment (**MVP**) | ✅ Released |
+| Next | QR scanning, favorites, reviews, cart, subscriptions, payments (Stripe test mode), notifications | ⏳ Planned |
 
 ## Engineering practices
 
 - **Git flow**: `feature/*` → PR → `develop` → release PR → `main` + semantic tag. Protected branches with required CI.
-- **Security by design**: BCrypt, short-lived JWT + rotated refresh tokens stored as hashes, rate limiting, restrictive CORS, secrets only in environment variables, Dependabot.
+- **Security by design**: BCrypt, short-lived JWT + rotated refresh tokens stored as hashes, rate limiting, restrictive CORS, row locks so a coupon is never redeemed twice, an audit log, secrets only in environment variables.
 - **Testing**: JUnit 5 + Testcontainers (real PostGIS and Redis) in the API; unit, widget and flow tests in the app.
+- **Deployment**: Docker on Render (API + Redis) and Neon (PostgreSQL + PostGIS), deployed from `main` only after CI passes.
 
 <sub>Built by <a href="https://github.com/IDymian">@IDymian</a>.</sub>
